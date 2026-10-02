@@ -1,4 +1,4 @@
-import { Router, type Request } from 'express'
+import { Router, type Request, type RequestHandler } from 'express'
 import { verifyXenditWebhookToken, getPlan, billingPeriodMsFor } from '../lib/xendit.js'
 import {
   getUserByXenditSubscriptionId,
@@ -16,6 +16,34 @@ const router = Router()
 interface XenditWebhookPayload {
   event?: unknown
   data?: Record<string, unknown>
+}
+
+export const webhookBodyParser: RequestHandler = (req, _res, next) => {
+  const body = req.body
+  if (Buffer.isBuffer(body)) {
+    req.body = body.toString('utf8')
+  }
+  next()
+}
+
+function parsePayload(body: unknown): XenditWebhookPayload | null {
+  if (!body) return null
+  if (typeof body === 'string') {
+    try {
+      return JSON.parse(body) as XenditWebhookPayload
+    } catch {
+      return null
+    }
+  }
+  if (Buffer.isBuffer(body)) {
+    try {
+      return JSON.parse(body.toString('utf8')) as XenditWebhookPayload
+    } catch {
+      return null
+    }
+  }
+  if (typeof body === 'object') return body as XenditWebhookPayload
+  return null
 }
 
 function stringField(value: unknown): string | null {
@@ -78,10 +106,8 @@ router.post('/', async (req: Request, res) => {
     return
   }
 
-  let payload: XenditWebhookPayload
-  try {
-    payload = JSON.parse((req.body as Buffer).toString('utf8')) as XenditWebhookPayload
-  } catch {
+  const payload = parsePayload(req.body)
+  if (!payload) {
     res.status(400).json({ error: 'invalid-body' })
     return
   }
