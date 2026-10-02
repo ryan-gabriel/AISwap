@@ -4,7 +4,6 @@ import { requireAppToken } from '../middleware/auth.js'
 import { rateLimit } from '../middleware/rate-limit.js'
 import { getUser, upsertUser } from '../repo.js'
 import { createSubscription, type SubscriptionInterval } from '../lib/xendit.js'
-import { env } from '../env.js'
 
 const UpgradeQuery = z.object({
   interval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
@@ -34,19 +33,13 @@ router.get(
   }
 
   const interval = parsed.data.interval as SubscriptionInterval
-  const planId =
-    interval === 'yearly' ? env.xenditPlanProYearly : env.xenditPlanProMonthly
-
   const subscription = await createSubscription({
-    planId,
     referenceId: user.userId,
     email: user.email,
     interval,
   })
 
-  if (user.xenditSubscriptionId !== planId) {
-    await upsertUser({ ...user, xenditSubscriptionId: planId })
-  }
+  await upsertUser({ ...user, xenditCheckoutSessionId: subscription.id })
 
   res.status(200).json({ checkoutUrl: subscription.checkoutUrl })
   },

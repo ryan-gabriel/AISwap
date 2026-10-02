@@ -7,6 +7,7 @@ alter table if exists users rename column "stripeCustomerId" to "xenditSubscript
 drop index if exists users_stripe_idx;
 alter table if exists users add column if not exists "graceEndsAt" timestamptz;
 alter table if exists users add column if not exists "proUntil" timestamptz;
+alter table if exists users add column if not exists "xenditCheckoutSessionId" text;
 
 create table if not exists users (
   "userId" text primary key,
@@ -14,12 +15,14 @@ create table if not exists users (
   "licenseTier" text not null default 'free' check ("licenseTier" in ('free', 'pro')),
   "subscriptionStatus" text not null default 'none',
   "xenditSubscriptionId" text unique,
+  "xenditCheckoutSessionId" text,
   "graceEndsAt" timestamptz,
   "proUntil" timestamptz,
   "lastVerifiedAt" timestamptz
 );
 
 create index if not exists users_xendit_idx on users ("xenditSubscriptionId");
+create index if not exists users_checkout_idx on users ("xenditCheckoutSessionId");
 
 create table if not exists installations (
   "instId" text primary key,

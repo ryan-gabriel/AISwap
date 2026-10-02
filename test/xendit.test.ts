@@ -55,14 +55,14 @@ describe('xendit client failures', () => {
   it('createSubscription throws without a checkout url', async () => {
     mockFetchOnce(201, { id: 'session-1', payment_link_url: null })
     await expect(
-      createSubscription({ planId: 'plan-1', referenceId: 'sub-1', email: 'a@b.com', interval: 'monthly' }),
+      createSubscription({ referenceId: 'sub-1', email: 'a@b.com', interval: 'monthly' }),
     ).rejects.toThrow(XenditError)
   })
 
   it('throws an XenditError on a non-ok api response', async () => {
     mockFetchOnce(400, { message: 'bad request' })
     await expect(
-      createSubscription({ planId: 'plan-1', referenceId: 'sub-1', email: 'a@b.com', interval: 'monthly' }),
+      createSubscription({ referenceId: 'sub-1', email: 'a@b.com', interval: 'monthly' }),
     ).rejects.toThrow(XenditError)
   })
 })
@@ -73,7 +73,6 @@ describe('xendit client success paths', () => {
   it('creates a subscription and returns the hosted checkout url', async () => {
     mockFetchOnce(201, { id: 'session-1', payment_link_url: 'https://checkout.xendit.co/x' })
     const result = await createSubscription({
-      planId: 'plan-1',
       referenceId: 'sub-1',
       email: 'a@b.com',
       interval: 'monthly',
@@ -135,7 +134,6 @@ describe('xendit request construction', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await createSubscription({
-      planId: 'plan-1',
       referenceId: 'sub-1',
       email: 'a@b.com',
       interval: 'monthly',
@@ -149,6 +147,7 @@ describe('xendit request construction', () => {
     expect(body.currency).toBe(env.xenditCurrency)
     expect(body.country).toBe(env.xenditCountry)
     expect(body.country).toBe('ID')
+    expect(body.description).toBe('ai-account-switcher pro monthly')
   })
 
   it('derives the yearly amount from the yearly price env', async () => {
@@ -165,12 +164,12 @@ describe('xendit request construction', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await createSubscription({
-      planId: 'plan-1',
       referenceId: 'sub-1',
       email: 'a@b.com',
       interval: 'yearly',
     })
 
     expect(body?.amount).toBe(env.xenditPriceProYearlyMinor)
+    expect(body?.description).toBe('ai-account-switcher pro yearly')
   })
 })

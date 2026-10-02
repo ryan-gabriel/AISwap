@@ -8,6 +8,7 @@ export interface UserRecord {
   licenseTier: LicenseTier
   subscriptionStatus: string
   xenditSubscriptionId: string | null
+  xenditCheckoutSessionId: string | null
   graceEndsAt: string | null
   proUntil: string | null
   lastVerifiedAt: string | null
@@ -38,6 +39,16 @@ export async function getUserByXenditSubscriptionId(subscriptionId: string): Pro
     .from(USERS_TABLE)
     .select('*')
     .eq('xenditSubscriptionId', subscriptionId)
+    .maybeSingle()
+  if (error) throw error
+  return data as UserRecord | null
+}
+
+export async function getUserByCheckoutSessionId(sessionId: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE)
+    .select('*')
+    .eq('xenditCheckoutSessionId', sessionId)
     .maybeSingle()
   if (error) throw error
   return data as UserRecord | null

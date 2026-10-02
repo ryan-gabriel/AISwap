@@ -2,6 +2,7 @@ import { Router, type Request } from 'express'
 import { verifyXenditWebhookToken, getPlan, billingPeriodMsFor } from '../lib/xendit.js'
 import {
   getUserByXenditSubscriptionId,
+  getUserByCheckoutSessionId,
   getUser,
   upsertUser,
   insertEventProcessed,
@@ -34,10 +35,17 @@ async function resolveUserId(data: Record<string, unknown>): Promise<string | nu
   if (referenceId) return referenceId
   const externalId = stringField(data.external_id)
   if (externalId) return externalId
-  const planId = stringField(data.plan_id) ?? stringField(data.id)
+  const planId = stringField(data.plan_id)
   if (planId) {
     const user = await getUserByXenditSubscriptionId(planId)
-    return user?.userId ?? null
+    if (user) return user.userId
+  }
+  const id = stringField(data.id)
+  if (id) {
+    const bySession = await getUserByCheckoutSessionId(id)
+    if (bySession) return bySession.userId
+    const bySubscription = await getUserByXenditSubscriptionId(id)
+    if (bySubscription) return bySubscription.userId
   }
   return null
 }
@@ -105,6 +113,7 @@ router.post('/', async (req: Request, res) => {
     licenseTier: existing?.licenseTier ?? 'free',
     subscriptionStatus: existing?.subscriptionStatus ?? 'none',
     xenditSubscriptionId: existing?.xenditSubscriptionId ?? null,
+    xenditCheckoutSessionId: existing?.xenditCheckoutSessionId ?? null,
     graceEndsAt: existing?.graceEndsAt ?? null,
     proUntil: existing?.proUntil ?? null,
     lastVerifiedAt: existing?.lastVerifiedAt ?? null,
@@ -131,6 +140,7 @@ router.post('/', async (req: Request, res) => {
       user.subscriptionStatus = 'active'
       user.licenseTier = 'pro'
       if (planId) user.xenditSubscriptionId = planId
+      user.xenditCheckoutSessionId = null
       user.graceEndsAt = null
       user.proUntil = proUntilFrom(source, periodMs)
       break

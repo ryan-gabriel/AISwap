@@ -17,6 +17,7 @@ vi.mock('../src/repo.js', async (importOriginal) => {
     ...mod,
     getUser: vi.fn(),
     getUserByXenditSubscriptionId: vi.fn(),
+    getUserByCheckoutSessionId: vi.fn(),
     upsertUser: vi.fn(),
     insertEventProcessed: vi.fn(),
     hasProcessedEvent: vi.fn(),
@@ -27,6 +28,7 @@ import { verifyXenditWebhookToken, getPlan } from '../src/lib/xendit.js'
 import {
   getUser,
   getUserByXenditSubscriptionId,
+  getUserByCheckoutSessionId,
   upsertUser,
   insertEventProcessed,
   hasProcessedEvent,
@@ -37,6 +39,7 @@ const mockedVerify = vi.mocked(verifyXenditWebhookToken)
 const mockedGetPlan = vi.mocked(getPlan)
 const mockedGetUser = vi.mocked(getUser)
 const mockedFindBySub = vi.mocked(getUserByXenditSubscriptionId)
+const mockedFindBySession = vi.mocked(getUserByCheckoutSessionId)
 const mockedUpsert = vi.mocked(upsertUser)
 const mockedInsert = vi.mocked(insertEventProcessed)
 const mockedHasProcessed = vi.mocked(hasProcessedEvent)
@@ -48,6 +51,7 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
     licenseTier: 'free',
     subscriptionStatus: 'none',
     xenditSubscriptionId: null,
+    xenditCheckoutSessionId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,
@@ -77,6 +81,7 @@ beforeEach(() => {
   mockedHasProcessed.mockResolvedValue(false)
   mockedGetUser.mockResolvedValue(makeUser())
   mockedFindBySub.mockResolvedValue(null)
+  mockedFindBySession.mockResolvedValue(null)
 })
 
 describe('POST /api/webhooks/xendit verification', () => {
@@ -165,6 +170,9 @@ describe('POST /api/webhooks/xendit license transitions', () => {
   })
 
   it('recurring.plan.activated upgrades the user and links the plan', async () => {
+    mockedGetUser.mockResolvedValue(
+      makeUser({ xenditCheckoutSessionId: 'ps-pending-session' }),
+    )
     mockedGetPlan.mockResolvedValue({
       id: 'plan-1',
       reference_id: 'sub-1',
@@ -183,7 +191,22 @@ describe('POST /api/webhooks/xendit license transitions', () => {
         licenseTier: 'pro',
         subscriptionStatus: 'active',
         xenditSubscriptionId: 'plan-1',
+        xenditCheckoutSessionId: null,
       }),
+    )
+  })
+
+  it('links an event by checkout session id when reference_id is absent', async () => {
+    mockedFindBySession.mockResolvedValue(makeUser())
+    const res = await post('recurring.cycle.created', {
+      id: 'ps-pending-session',
+      plan_id: 'plan-1',
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockedFindBySession).toHaveBeenCalledWith('ps-pending-session')
+    expect(mockedUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'sub-1' }),
     )
   })
 

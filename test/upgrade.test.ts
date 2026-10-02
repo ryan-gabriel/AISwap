@@ -22,8 +22,8 @@ const mockedGetUser = vi.mocked(getUser)
 const mockedUpsert = vi.mocked(upsertUser)
 const mockedGetInstallation = vi.mocked(getInstallation)
 
-function token(): string {
-  return signAppToken({ scope: 'app', sub: 'sub-1', instId: 'inst-abcde12345' })
+function token(sub = 'sub-1', instId = 'inst-abcde12345'): string {
+  return signAppToken({ scope: 'app', sub, instId })
 }
 
 function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
@@ -33,6 +33,7 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
     licenseTier: 'free',
     subscriptionStatus: 'none',
     xenditSubscriptionId: null,
+    xenditCheckoutSessionId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,
@@ -41,7 +42,7 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
   mockedGetUser.mockResolvedValue(makeUser())
   mockedUpsert.mockResolvedValue()
   mockedCreate.mockResolvedValue({ id: 'session-1', checkoutUrl: 'https://checkout.example/start' })
@@ -58,7 +59,6 @@ describe('GET /api/upgrade', () => {
     expect(res.body.checkoutUrl).toBe('https://checkout.example/start')
     expect(mockedCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        planId: 'plan_monthly',
         referenceId: 'sub-1',
         email: 'a@b.com',
         interval: 'monthly',
@@ -73,43 +73,68 @@ describe('GET /api/upgrade', () => {
 
     expect(res.status).toBe(200)
     expect(mockedCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ planId: 'plan_yearly', interval: 'yearly' }),
+      expect.objectContaining({ interval: 'yearly' }),
     )
   })
 
-  it('persists the recurring plan id, not the payment-session id', async () => {
+  it('persists the checkout session id, not a shared plan id', async () => {
     await request(createApp())
       .get('/api/upgrade')
       .set('Authorization', `Bearer ${token()}`)
 
     expect(mockedUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'sub-1', xenditSubscriptionId: 'plan_monthly' }),
+      expect.objectContaining({ userId: 'sub-1', xenditCheckoutSessionId: 'session-1' }),
     )
     expect(mockedUpsert).toHaveBeenCalledWith(
       expect.not.objectContaining({ xenditSubscriptionId: 'session-1' }),
     )
   })
 
-  it('persists the yearly plan id for the yearly interval', async () => {
+  it('persists the yearly checkout session id for the yearly interval', async () => {
+    mockedCreate.mockResolvedValue({
+      id: 'session-yearly',
+      checkoutUrl: 'https://checkout.example/start',
+    })
     await request(createApp())
       .get('/api/upgrade?interval=yearly')
       .set('Authorization', `Bearer ${token()}`)
 
     expect(mockedUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'sub-1', xenditSubscriptionId: 'plan_yearly' }),
+      expect.objectContaining({ userId: 'sub-1', xenditCheckoutSessionId: 'session-yearly' }),
     )
   })
 
-  it('does not upsert when the stored plan id already matches', async () => {
-    mockedGetUser.mockResolvedValue(
-      makeUser({ xenditSubscriptionId: 'plan_monthly' }),
-    )
-
-    await request(createApp())
+  it('stores a distinct pending session per user without a shared unique value', async () => {
+    const first = await request(createApp())
       .get('/api/upgrade')
       .set('Authorization', `Bearer ${token()}`)
+    expect(first.status).toBe(200)
 
-    expect(mockedUpsert).not.toHaveBeenCalled()
+    mockedGetInstallation.mockResolvedValueOnce({ userId: 'sub-2' })
+    mockedGetUser.mockResolvedValueOnce(
+      makeUser({ userId: 'sub-2', email: 'b@c.com' }),
+    )
+    mockedCreate.mockResolvedValueOnce({
+      id: 'session-2',
+      checkoutUrl: 'https://checkout.example/start',
+    })
+
+    const second = await request(createApp())
+      .get('/api/upgrade')
+      .set('Authorization', `Bearer ${token('sub-2', 'inst-abcde12346')}`)
+    expect(second.status).toBe(200)
+
+    expect(mockedUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'sub-2',
+        xenditCheckoutSessionId: 'session-2',
+        xenditSubscriptionId: null,
+      }),
+    )
+    const distinct = new Set(
+      mockedUpsert.mock.calls.map((call) => (call[0] as UserRecord).xenditCheckoutSessionId),
+    )
+    expect(distinct).toEqual(new Set(['session-1', 'session-2']))
   })
 
   it('refuses a duplicate upgrade for an already-active subscription', async () => {

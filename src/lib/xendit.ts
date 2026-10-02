@@ -12,8 +12,8 @@ export interface CreatedSubscription {
 }
 
 export function isPlanId(value: string | null | undefined): value is string {
-  if (!value || value.length === 0) return false
-  return !value.startsWith('ps-')
+  if (!value) return false
+  return value.startsWith('repl_')
 }
 
 export interface XenditPlan {
@@ -61,12 +61,11 @@ export function verifyXenditWebhookToken(header: string | undefined): boolean {
 }
 
 export async function createSubscription(params: {
-  planId: string
   referenceId: string
   email: string
   interval: SubscriptionInterval
 }): Promise<CreatedSubscription> {
-  const { planId, referenceId, email, interval } = params
+  const { referenceId, email, interval } = params
   const amount =
     interval === 'yearly' ? env.xenditPriceProYearlyMinor : env.xenditPriceProMonthlyMinor
   const session = await xenditFetch<{ id: string; payment_link_url?: string | null }>('/sessions', {
@@ -78,7 +77,7 @@ export async function createSubscription(params: {
       amount,
       currency: env.xenditCurrency,
       country: env.xenditCountry,
-      description: planId,
+      description: `ai-account-switcher pro ${interval}`,
       customer: { reference_id: referenceId, type: 'INDIVIDUAL', email },
       subscription: {
         schedule: {

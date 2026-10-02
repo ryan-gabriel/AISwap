@@ -50,7 +50,8 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
     email: 'a@b.com',
     licenseTier: 'pro',
     subscriptionStatus: 'active',
-    xenditSubscriptionId: 'plan-1',
+    xenditSubscriptionId: 'repl_plan-1',
+    xenditCheckoutSessionId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,
@@ -101,7 +102,7 @@ describe('POST /api/account/cancel', () => {
       .set('Authorization', `Bearer ${token()}`)
 
     expect(res.status).toBe(200)
-    expect(mockedCancel).toHaveBeenCalledWith('plan-1')
+    expect(mockedCancel).toHaveBeenCalledWith('repl_plan-1')
     expect(mockedUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ subscriptionStatus: 'canceled' }),
     )
@@ -119,6 +120,17 @@ describe('POST /api/account/cancel', () => {
 
   it('returns 400 for a stored payment-session id instead of calling xendit', async () => {
     mockedGetUser.mockResolvedValue(makeUser({ xenditSubscriptionId: 'ps-legacy-session' }))
+    const res = await request(createApp())
+      .post('/api/account/cancel')
+      .set('Authorization', `Bearer ${token()}`)
+
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('no-subscription')
+    expect(mockedCancel).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for a non-repl plan id instead of calling xendit', async () => {
+    mockedGetUser.mockResolvedValue(makeUser({ xenditSubscriptionId: 'plan_xxx' }))
     const res = await request(createApp())
       .post('/api/account/cancel')
       .set('Authorization', `Bearer ${token()}`)

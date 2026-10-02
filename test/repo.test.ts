@@ -40,6 +40,7 @@ vi.mock('../src/db.js', () => ({
 import {
   getUser,
   getUserByXenditSubscriptionId,
+  getUserByCheckoutSessionId,
   upsertUser,
   bindInstallation,
   countInstallations,
@@ -59,6 +60,7 @@ function makeUser(): UserRecord {
     licenseTier: 'free',
     subscriptionStatus: 'free',
     xenditSubscriptionId: null,
+    xenditCheckoutSessionId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,
@@ -98,6 +100,22 @@ describe('getUserByXenditSubscriptionId', () => {
   it('throws on error', async () => {
     h.state.outcome = () => ({ data: null, error: new Error('x') })
     await expect(getUserByXenditSubscriptionId('xnd_sub_1')).rejects.toThrow('x')
+  })
+})
+
+describe('getUserByCheckoutSessionId', () => {
+  it('returns the user for a checkout session id', async () => {
+    h.state.outcome = () => ({ data: makeUser(), error: null })
+    await expect(getUserByCheckoutSessionId('ps-session-1')).resolves.toEqual(makeUser())
+  })
+
+  it('returns null when not found', async () => {
+    await expect(getUserByCheckoutSessionId('ps-session-1')).resolves.toBeNull()
+  })
+
+  it('throws on error', async () => {
+    h.state.outcome = () => ({ data: null, error: new Error('x') })
+    await expect(getUserByCheckoutSessionId('ps-session-1')).rejects.toThrow('x')
   })
 })
 

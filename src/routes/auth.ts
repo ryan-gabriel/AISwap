@@ -57,6 +57,7 @@ router.post(
         licenseTier: 'free',
         subscriptionStatus: 'none',
         xenditSubscriptionId: null,
+        xenditCheckoutSessionId: null,
         graceEndsAt: null,
         proUntil: null,
         lastVerifiedAt: now,

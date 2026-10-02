@@ -44,6 +44,7 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
     licenseTier: 'free',
     subscriptionStatus: 'none',
     xenditSubscriptionId: null,
+    xenditCheckoutSessionId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,

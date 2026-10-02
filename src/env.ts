@@ -38,8 +38,6 @@ export const env = {
   xenditWebhookToken: required('XENDIT_WEBHOOK_TOKEN'),
   xenditCurrency: process.env.XENDIT_CURRENCY ?? 'USD',
   xenditCountry: process.env.XENDIT_COUNTRY ?? 'ID',
-  xenditPlanProMonthly: required('XENDIT_PLAN_PRO_MONTHLY'),
-  xenditPlanProYearly: required('XENDIT_PLAN_PRO_YEARLY'),
   xenditPriceProMonthlyMinor: Number(required('XENDIT_PRICE_PRO_MONTHLY_MINOR')),
   xenditPriceProYearlyMinor: Number(required('XENDIT_PRICE_PRO_YEARLY_MINOR')),
   jwtSecret: required('JWT_SECRET', { minLength: 32 }),
