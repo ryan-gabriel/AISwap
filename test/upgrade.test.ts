@@ -3,9 +3,9 @@ import request from 'supertest'
 import { signAppToken } from '../src/lib/jwt.js'
 import type { UserRecord } from '../src/repo.js'
 
-vi.mock('../src/lib/xendit.js', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../src/lib/xendit.js')>()
-  return { ...mod, createSubscription: vi.fn() }
+vi.mock('../src/lib/lemonsqueezy.js', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../src/lib/lemonsqueezy.js')>()
+  return { ...mod, createCheckout: vi.fn() }
 })
 
 vi.mock('../src/repo.js', async (importOriginal) => {
@@ -13,11 +13,11 @@ vi.mock('../src/repo.js', async (importOriginal) => {
   return { ...mod, getUser: vi.fn(), upsertUser: vi.fn(), getInstallation: vi.fn() }
 })
 
-import { createSubscription } from '../src/lib/xendit.js'
+import { createCheckout } from '../src/lib/lemonsqueezy.js'
 import { getUser, upsertUser, getInstallation } from '../src/repo.js'
 import { createApp } from '../src/app.js'
 
-const mockedCreate = vi.mocked(createSubscription)
+const mockedCreate = vi.mocked(createCheckout)
 const mockedGetUser = vi.mocked(getUser)
 const mockedUpsert = vi.mocked(upsertUser)
 const mockedGetInstallation = vi.mocked(getInstallation)
@@ -33,7 +33,7 @@ function makeUser(overrides: Partial<UserRecord> = {}): UserRecord {
     licenseTier: 'free',
     subscriptionStatus: 'none',
     xenditSubscriptionId: null,
-    xenditCheckoutSessionId: null,
+    lemonsqueezyCheckoutId: null,
     graceEndsAt: null,
     proUntil: null,
     lastVerifiedAt: null,
@@ -59,7 +59,7 @@ describe('GET /api/upgrade', () => {
     expect(res.body.checkoutUrl).toBe('https://checkout.example/start')
     expect(mockedCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        referenceId: 'sub-1',
+        userId: 'sub-1',
         email: 'a@b.com',
         interval: 'monthly',
       }),
@@ -83,7 +83,7 @@ describe('GET /api/upgrade', () => {
       .set('Authorization', `Bearer ${token()}`)
 
     expect(mockedUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'sub-1', xenditCheckoutSessionId: 'session-1' }),
+      expect.objectContaining({ userId: 'sub-1', lemonsqueezyCheckoutId: 'session-1' }),
     )
     expect(mockedUpsert).toHaveBeenCalledWith(
       expect.not.objectContaining({ xenditSubscriptionId: 'session-1' }),
@@ -100,7 +100,7 @@ describe('GET /api/upgrade', () => {
       .set('Authorization', `Bearer ${token()}`)
 
     expect(mockedUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'sub-1', xenditCheckoutSessionId: 'session-yearly' }),
+      expect.objectContaining({ userId: 'sub-1', lemonsqueezyCheckoutId: 'session-yearly' }),
     )
   })
 
@@ -127,12 +127,12 @@ describe('GET /api/upgrade', () => {
     expect(mockedUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'sub-2',
-        xenditCheckoutSessionId: 'session-2',
+        lemonsqueezyCheckoutId: 'session-2',
         xenditSubscriptionId: null,
       }),
     )
     const distinct = new Set(
-      mockedUpsert.mock.calls.map((call) => (call[0] as UserRecord).xenditCheckoutSessionId),
+      mockedUpsert.mock.calls.map((call) => (call[0] as UserRecord).lemonsqueezyCheckoutId),
     )
     expect(distinct).toEqual(new Set(['session-1', 'session-2']))
   })

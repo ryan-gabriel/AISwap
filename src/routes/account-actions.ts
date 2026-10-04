@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAppToken } from '../middleware/auth.js'
 import { rateLimit } from '../middleware/rate-limit.js'
 import { getUser, upsertUser } from '../repo.js'
-import { cancelSubscription, isPlanId } from '../lib/xendit.js'
+import { cancelSubscription as cancelLemonSqueezy } from '../lib/lemonsqueezy.js'
+import { cancelSubscription as cancelXendit, isPlanId } from '../lib/xendit.js'
 
 const router = Router()
 
@@ -16,21 +17,36 @@ router.post(
     res.status(401).json({ error: 'user-not-found' })
     return
   }
-  if (!isPlanId(user.xenditSubscriptionId)) {
-    res.status(400).json({ error: 'no-subscription' })
-    return
-  }
   if (user.subscriptionStatus === 'canceled') {
     res.status(200).json({ ok: true })
     return
   }
-  try {
-    await cancelSubscription(user.xenditSubscriptionId)
-  } catch {
-    res.status(502).json({ error: 'xendit-cancel-failed' })
+
+  if (user.lemonsqueezySubscriptionId) {
+    try {
+      await cancelLemonSqueezy(user.lemonsqueezySubscriptionId)
+    } catch {
+      res.status(502).json({ error: 'cancel-failed' })
+      return
+    }
+    await upsertUser({ ...user, subscriptionStatus: 'canceled' })
+    res.status(200).json({ ok: true })
     return
   }
-  await upsertUser({ ...user, subscriptionStatus: 'canceled' })
+
+  if (isPlanId(user.xenditSubscriptionId)) {
+    try {
+      await cancelXendit(user.xenditSubscriptionId)
+    } catch {
+      res.status(502).json({ error: 'cancel-failed' })
+      return
+    }
+    await upsertUser({ ...user, subscriptionStatus: 'canceled' })
+    res.status(200).json({ ok: true })
+    return
+  }
+
+  res.status(400).json({ error: 'no-subscription' })
   res.status(200).json({ ok: true })
   },
 )

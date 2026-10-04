@@ -8,6 +8,7 @@ import upgradeRouter from './routes/upgrade.js'
 import portalRouter from './routes/portal.js'
 import webhooksRouter from './routes/webhooks.js'
 import { webhookBodyParser } from './routes/webhooks.js'
+import lemonsqueezyWebhooksRouter from './routes/webhooks-lemonsqueezy.js'
 import accountRouter from './routes/account.js'
 import accountActionsRouter from './routes/account-actions.js'
 import checkoutCompleteRouter from './routes/checkout-complete.js'
@@ -21,6 +22,11 @@ export function createApp(): express.Express {
 
   app.get('/checkout-complete', checkoutCompleteRouter)
   app.get('/account', accountRouter)
+  app.use(
+    '/api/webhooks/lemonsqueezy',
+    express.raw({ type: 'application/json', limit: '1mb' }),
+    lemonsqueezyWebhooksRouter,
+  )
   app.use(
     '/api/webhooks/xendit',
     express.json(),

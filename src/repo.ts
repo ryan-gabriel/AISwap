@@ -9,6 +9,10 @@ export interface UserRecord {
   subscriptionStatus: string
   xenditSubscriptionId: string | null
   xenditCheckoutSessionId: string | null
+  lemonsqueezySubscriptionId: string | null
+  lemonsqueezyCheckoutId: string | null
+  lemonsqueezyCustomerId: string | null
+  lemonsqueezyVariantId: string | null
   graceEndsAt: string | null
   proUntil: string | null
   lastVerifiedAt: string | null
@@ -49,6 +53,36 @@ export async function getUserByCheckoutSessionId(sessionId: string): Promise<Use
     .from(USERS_TABLE)
     .select('*')
     .eq('xenditCheckoutSessionId', sessionId)
+    .maybeSingle()
+  if (error) throw error
+  return data as UserRecord | null
+}
+
+export async function getUserByLemonSqueezySubscriptionId(subscriptionId: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE)
+    .select('*')
+    .eq('lemonsqueezySubscriptionId', subscriptionId)
+    .maybeSingle()
+  if (error) throw error
+  return data as UserRecord | null
+}
+
+export async function getUserByLemonSqueezyCheckoutId(checkoutId: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE)
+    .select('*')
+    .eq('lemonsqueezyCheckoutId', checkoutId)
+    .maybeSingle()
+  if (error) throw error
+  return data as UserRecord | null
+}
+
+export async function getUserByLemonSqueezyCustomerId(customerId: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE)
+    .select('*')
+    .eq('lemonsqueezyCustomerId', customerId)
     .maybeSingle()
   if (error) throw error
   return data as UserRecord | null

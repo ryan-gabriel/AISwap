@@ -12,7 +12,7 @@ router.get('/', requireAppToken, async (req, res) => {
     res.status(401).json({ error: 'user-not-found' })
     return
   }
-  if (!user.xenditSubscriptionId) {
+  if (!user.lemonsqueezySubscriptionId && !user.xenditSubscriptionId) {
     res.status(400).json({ error: 'no-subscription' })
     return
   }

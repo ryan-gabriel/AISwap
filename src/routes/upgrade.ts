@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { requireAppToken } from '../middleware/auth.js'
 import { rateLimit } from '../middleware/rate-limit.js'
 import { getUser, upsertUser } from '../repo.js'
-import { createSubscription, type SubscriptionInterval } from '../lib/xendit.js'
+import { createCheckout } from '../lib/lemonsqueezy.js'
+import type { SubscriptionInterval } from '../lib/lemonsqueezy.js'
 
 const UpgradeQuery = z.object({
   interval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
@@ -33,15 +34,15 @@ router.get(
   }
 
   const interval = parsed.data.interval as SubscriptionInterval
-  const subscription = await createSubscription({
-    referenceId: user.userId,
+  const checkout = await createCheckout({
+    userId: user.userId,
     email: user.email,
     interval,
   })
 
-  await upsertUser({ ...user, xenditCheckoutSessionId: subscription.id })
+  await upsertUser({ ...user, lemonsqueezyCheckoutId: checkout.id })
 
-  res.status(200).json({ checkoutUrl: subscription.checkoutUrl })
+  res.status(200).json({ checkoutUrl: checkout.checkoutUrl })
   },
 )
 

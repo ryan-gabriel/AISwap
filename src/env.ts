@@ -8,6 +8,8 @@ const COMMON_PLACEHOLDERS = [
   'sk_live_xxx',
   'xnd_test_unit',
   'xnd_whtok_unit',
+  'your_lemonsqueezy_api_key',
+  'your_webhook_signing_secret',
   '<google-oauth-client-id>',
 ]
 
@@ -40,6 +42,13 @@ export const env = {
   xenditCountry: process.env.XENDIT_COUNTRY ?? 'ID',
   xenditPriceProMonthlyMinor: Number(required('XENDIT_PRICE_PRO_MONTHLY_MINOR')),
   xenditPriceProYearlyMinor: Number(required('XENDIT_PRICE_PRO_YEARLY_MINOR')),
+  lemonSqueezyApiKey: required('LEMONSQUEEZY_API_KEY'),
+  lemonSqueezyStoreId: required('LEMONSQUEEZY_STORE_ID'),
+  lemonSqueezyWebhookSecret: required('LEMONSQUEEZY_WEBHOOK_SECRET', { minLength: 6 }),
+  lemonSqueezyProductId: required('LEMONSQUEEZY_PRODUCT_ID'),
+  lemonSqueezyVariantProMonthly: Number(required('LEMONSQUEEZY_VARIANT_PRO_MONTHLY')),
+  lemonSqueezyVariantProYearly: Number(required('LEMONSQUEEZY_VARIANT_PRO_YEARLY')),
+  lemonSqueezyPortalEnabled: (process.env.LEMONSQUEEZY_PORTAL_ENABLED ?? 'true') === 'true',
   jwtSecret: required('JWT_SECRET', { minLength: 32 }),
   appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
 }
