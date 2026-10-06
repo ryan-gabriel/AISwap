@@ -24,7 +24,7 @@ router.get('/account', (_req, res) => {
         '<p id="status" class="status">Loading\u2026</p>',
         '<button id="cancelBtn" type="button">Cancel subscription</button>',
         '<p id="message" class="muted" hidden></p>',
-        '<p class="muted">Payment-method updates are handled by Xendit. Contact support for card changes.</p>',
+        '<p class="muted">Payment-method updates are handled by Lemon Squeezy. Contact support for card changes.</p>',
         '</div>',
         '<script>',
         '(function(){',

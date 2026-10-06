@@ -100,6 +100,7 @@ describe('POST /api/accounts/save', () => {
 
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ allowed: true, accountCount: 3 })
+    expect(mockedSync).toHaveBeenCalledTimes(1)
     expect(mockedSync).toHaveBeenCalledWith('sub-1', 'chatgpt', ['a', 'b', 'c'])
   })
 
@@ -115,6 +116,7 @@ describe('POST /api/accounts/save', () => {
 
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ allowed: true, accountCount: 3 })
+    expect(mockedSync).toHaveBeenCalledTimes(1)
     expect(mockedSync).toHaveBeenCalledWith('sub-1', 'chatgpt', ['a', 'b'])
   })
 
@@ -130,6 +132,7 @@ describe('POST /api/accounts/save', () => {
 
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ allowed: true, accountCount: 3 })
+    expect(mockedSync).toHaveBeenCalledTimes(1)
     expect(mockedSync).toHaveBeenCalledWith('sub-1', 'claude', ['a'])
   })
 

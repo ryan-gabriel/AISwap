@@ -33,7 +33,6 @@ router.post('/save', requireAppToken, async (req, res) => {
     return
   }
 
-  await syncUserAccounts(userId, parsed.data.adapterId, parsed.data.accountIds)
   const serverCount = await syncUserAccounts(userId, parsed.data.adapterId, parsed.data.accountIds)
   res.status(200).json({ allowed: true, accountCount: serverCount })
 })

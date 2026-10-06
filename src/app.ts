@@ -63,3 +63,11 @@ export function createApp(): express.Express {
 
   return app
 }
+
+/**
+ * Vercel detects this project as an Express backend framework app and selects
+ * `src/app.ts` as the entrypoint. The selected file MUST either default-export
+ * the app or call `app.listen()`. Otherwise Vercel throws
+ * `Can't detect way to handle request` on every cold start.
+ */
+export default createApp()

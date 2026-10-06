@@ -1,4 +1,9 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
+
+// dotenv v18 defaults to `override: true`, which lets a local .env silently shadow a real
+// environment variable injected by Vercel, CI, or the shell. Ask for the conventional
+// precedence explicitly: the real environment wins, and .env is only a local fallback.
+config({ override: false })
 
 const isProd = process.env.NODE_ENV === 'production'
 
