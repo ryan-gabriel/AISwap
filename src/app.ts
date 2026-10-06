@@ -12,6 +12,7 @@ import lemonsqueezyWebhooksRouter from './routes/webhooks-lemonsqueezy.js'
 import accountRouter from './routes/account.js'
 import accountActionsRouter from './routes/account-actions.js'
 import checkoutCompleteRouter from './routes/checkout-complete.js'
+import landingRouter from './routes/landing.js'
 import { env } from './env.js'
 
 export function createApp(): express.Express {
@@ -20,6 +21,7 @@ export function createApp(): express.Express {
   app.disable('x-powered-by')
   app.set('trust proxy', env.isProd ? 1 : 0)
 
+  app.get('/', landingRouter)
   app.get('/checkout-complete', checkoutCompleteRouter)
   app.get('/account', accountRouter)
   app.use(

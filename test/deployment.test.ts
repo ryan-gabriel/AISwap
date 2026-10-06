@@ -53,6 +53,12 @@ describe('deployment routing contract', () => {
     expect(res.status).toBe(200)
   })
 
+  it('GET / returns 200', async () => {
+    const res = await request(app).get('/')
+    expect(res.status).not.toBe(404)
+    expect(res.status).toBe(200)
+  })
+
   it('GET /account returns non-404', async () => {
     const res = await request(app).get('/account')
     expect(res.status).not.toBe(404)
