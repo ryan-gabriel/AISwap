@@ -14,6 +14,7 @@ import {
   type UserRecord,
 } from '../repo.js'
 import { PAST_DUE_GRACE_MS } from '../license.js'
+import { lemonSqueezyEnabled } from '../env.js'
 
 const router = Router()
 
@@ -87,6 +88,10 @@ async function resolveUserId(data: Record<string, unknown>, meta: Record<string,
 }
 
 router.post('/', async (req: Request, res) => {
+  if (!lemonSqueezyEnabled) {
+    res.status(503).json({ error: 'payments-not-configured' })
+    return
+  }
   const rawBody = req.body
   const sig = getHeader(req, 'x-lemonsqueezy-signature') || getHeader(req, 'x-signature')
   if (!verifyLemonSqueezySignature(rawBody as any, sig)) {

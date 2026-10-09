@@ -10,6 +10,7 @@ import {
   type UserRecord,
 } from '../repo.js'
 import { PAST_DUE_GRACE_MS } from '../license.js'
+import { xenditEnabled } from '../env.js'
 
 const router = Router()
 
@@ -100,6 +101,10 @@ async function planIdOf(data: Record<string, unknown>): Promise<string | null> {
 }
 
 router.post('/', async (req: Request, res) => {
+  if (!xenditEnabled) {
+    res.status(503).json({ error: 'payments-not-configured' })
+    return
+  }
   const token = req.headers['x-callback-token']
   if (!verifyXenditWebhookToken(typeof token === 'string' ? token : undefined)) {
     res.status(400).json({ error: 'invalid-token' })

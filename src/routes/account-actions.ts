@@ -4,6 +4,7 @@ import { rateLimit } from '../middleware/rate-limit.js'
 import { getUser, upsertUser } from '../repo.js'
 import { cancelSubscription as cancelLemonSqueezy } from '../lib/lemonsqueezy.js'
 import { cancelSubscription as cancelXendit, isPlanId } from '../lib/xendit.js'
+import { lemonSqueezyEnabled, xenditEnabled } from '../env.js'
 
 const router = Router()
 
@@ -23,6 +24,10 @@ router.post(
   }
 
   if (user.lemonsqueezySubscriptionId) {
+    if (!lemonSqueezyEnabled) {
+      res.status(503).json({ error: 'payments-not-configured' })
+      return
+    }
     try {
       await cancelLemonSqueezy(user.lemonsqueezySubscriptionId)
     } catch {
@@ -35,6 +40,10 @@ router.post(
   }
 
   if (isPlanId(user.xenditSubscriptionId)) {
+    if (!xenditEnabled) {
+      res.status(503).json({ error: 'payments-not-configured' })
+      return
+    }
     try {
       await cancelXendit(user.xenditSubscriptionId)
     } catch {
@@ -47,7 +56,6 @@ router.post(
   }
 
   res.status(400).json({ error: 'no-subscription' })
-  res.status(200).json({ ok: true })
   },
 )
 

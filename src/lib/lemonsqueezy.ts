@@ -33,6 +33,7 @@ export function verifyLemonSqueezySignature(
   }
 
   const secret = env.lemonSqueezyWebhookSecret
+  if (!secret) return false
   const expectedHex = createHmac('sha256', secret).update(body).digest('hex')
   const suppliedBuffer = Buffer.from(supplied)
   const expectedBuffer = Buffer.from(expectedHex)
@@ -45,6 +46,9 @@ export function verifyLemonSqueezySignature(
   }
 }
 async function lsFetch<T>(path: string, init: RequestInit): Promise<T> {
+  if (!env.lemonSqueezyApiKey) {
+    throw new LemonSqueezyError('payments-not-configured')
+  }
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
@@ -62,7 +66,12 @@ async function lsFetch<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 export function variantIdFor(interval: SubscriptionInterval): number {
-  return interval === 'yearly' ? env.lemonSqueezyVariantProYearly : env.lemonSqueezyVariantProMonthly
+  const variantId =
+    interval === 'yearly' ? env.lemonSqueezyVariantProYearly : env.lemonSqueezyVariantProMonthly
+  if (variantId === null) {
+    throw new LemonSqueezyError('payments-not-configured')
+  }
+  return variantId
 }
 
 export async function createCheckout(params: {
@@ -71,6 +80,9 @@ export async function createCheckout(params: {
   interval: SubscriptionInterval
 }): Promise<CreatedCheckout> {
   const { userId, email, interval } = params
+  if (!env.lemonSqueezyStoreId) {
+    throw new LemonSqueezyError('payments-not-configured')
+  }
   const variantId = variantIdFor(interval)
 
   const body = JSON.stringify({

@@ -31,6 +31,9 @@ export class XenditError extends Error {
 }
 
 function basicAuth(): string {
+  if (!env.xenditSecretKey) {
+    throw new XenditError('payments-not-configured')
+  }
   return `Basic ${Buffer.from(`${env.xenditSecretKey}:`).toString('base64')}`
 }
 
@@ -52,8 +55,9 @@ async function xenditFetch<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 export function verifyXenditWebhookToken(header: string | undefined): boolean {
-  const supplied = header ?? ''
   const expected = env.xenditWebhookToken
+  if (!expected) return false
+  const supplied = header ?? ''
   const suppliedBuffer = Buffer.from(supplied)
   const expectedBuffer = Buffer.from(expected)
   if (suppliedBuffer.length !== expectedBuffer.length) return false
@@ -68,6 +72,9 @@ export async function createSubscription(params: {
   const { referenceId, email, interval } = params
   const amount =
     interval === 'yearly' ? env.xenditPriceProYearlyMinor : env.xenditPriceProMonthlyMinor
+  if (amount === null) {
+    throw new XenditError('payments-not-configured')
+  }
   const session = await xenditFetch<{ id: string; payment_link_url?: string | null }>('/sessions', {
     method: 'POST',
     body: JSON.stringify({
