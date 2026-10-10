@@ -82,6 +82,16 @@ describe('verifyGoogleToken', () => {
     await expect(verifyGoogleToken('tok')).rejects.toThrow('invalid-google-token')
   })
 
+  it('accepts a payload without an iss claim (tokeninfo quirk)', async () => {
+    mockFetchOnce(jsonResponse(true, validPayload({ iss: undefined })))
+    await expect(verifyGoogleToken('tok')).resolves.toEqual({ sub: 'g123', email: 'a@b.com' })
+  })
+
+  it('accepts accounts.google.com without scheme as the issuer', async () => {
+    mockFetchOnce(jsonResponse(true, validPayload({ iss: 'accounts.google.com' })))
+    await expect(verifyGoogleToken('tok')).resolves.toEqual({ sub: 'g123', email: 'a@b.com' })
+  })
+
   it('throws invalid-google-token when the token has expired', async () => {
     mockFetchOnce(jsonResponse(true, validPayload({ exp: Math.floor(Date.now() / 1000) - 10 })))
     await expect(verifyGoogleToken('tok')).rejects.toThrow('invalid-google-token')

@@ -62,7 +62,7 @@ export async function verifyGoogleToken(accessToken: string): Promise<GoogleUser
       `invalid-google-token: aud/azp mismatch (aud=${data.aud}, azp=${data.azp}, expected=${env.googleOAuthClientId})`,
     )
   }
-  if (data.iss !== 'https://accounts.google.com') {
+  if (data.iss !== undefined && data.iss !== 'https://accounts.google.com' && data.iss !== 'accounts.google.com') {
     throw new GoogleTokenError(`invalid-google-token: unexpected issuer (${data.iss})`)
   }
   if (typeof data.exp === 'number' && data.exp * 1000 <= Date.now()) {
