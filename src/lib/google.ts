@@ -51,7 +51,8 @@ export async function verifyGoogleToken(accessToken: string): Promise<GoogleUser
   }
   const sub = data.sub ?? data.user_id
   const email = data.email
-  if (!sub || !email || data.email_verified !== true) {
+  const emailVerified = data.email_verified === true || data.email_verified === 'true'
+  if (!sub || !email || !emailVerified) {
     throw new GoogleTokenError(
       `invalid-google-token: identity fields invalid (sub=${typeof sub}, email=${typeof email}, email_verified=${JSON.stringify(data.email_verified)})`,
     )

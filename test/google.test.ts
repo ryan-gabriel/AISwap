@@ -57,6 +57,16 @@ describe('verifyGoogleToken', () => {
     await expect(verifyGoogleToken('tok')).rejects.toThrow(GoogleTokenError)
   })
 
+  it('accepts email_verified as the string "true" (tokeninfo quirk)', async () => {
+    mockFetchOnce(jsonResponse(true, validPayload({ email_verified: 'true' })))
+    await expect(verifyGoogleToken('tok')).resolves.toEqual({ sub: 'g123', email: 'a@b.com' })
+  })
+
+  it('rejects email_verified as the string "false"', async () => {
+    mockFetchOnce(jsonResponse(true, validPayload({ email_verified: 'false' })))
+    await expect(verifyGoogleToken('tok')).rejects.toThrow(GoogleTokenError)
+  })
+
   it('throws invalid-google-token when the payload lacks identity fields', async () => {
     mockFetchOnce(jsonResponse(true, validPayload({ sub: undefined, user_id: undefined })))
     await expect(verifyGoogleToken('tok')).rejects.toThrow('invalid-google-token')
